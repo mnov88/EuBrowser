@@ -1,0 +1,14 @@
+# Vite
+dist/
+node_modules/
+.env
+.env.*
+!.env.example
+
+# IDE / Editor specific
+.vscode/
+.idea/
+
+# OS specific
+.DS_Store
+Thumbs.db

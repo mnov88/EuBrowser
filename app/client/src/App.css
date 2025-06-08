@@ -1,0 +1,46 @@
+#root {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 2rem;
+  text-align: center;
+}
+
+/* Basic Nav styling example - can be moved to MainLayout or Nav component */
+nav {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  margin-bottom: 2rem;
+}
+
+nav a {
+  text-decoration: none;
+  color: #1a73e8;
+  font-weight: 500;
+}
+
+nav a:hover {
+  text-decoration: underline;
+}
+
+/* Placeholder styling for layout elements */
+.search-bar-placeholder {
+  padding: 10px;
+  background-color: #f0f0f0;
+  border: 1px solid #ccc;
+  margin-bottom: 1rem;
+  text-align: center;
+}
+
+.breadcrumb-placeholder {
+  padding: 8px;
+  background-color: #e8e8e8;
+  border: 1px solid #c0c0c0;
+  margin-bottom: 1rem;
+  text-align: left;
+}
+
+.page-content {
+  padding: 1rem;
+  border: 1px solid #ddd;
+}
