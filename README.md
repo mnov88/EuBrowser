@@ -1,6 +1,5 @@
 # EuBrowser
 
-Would this make a good ai friendly project overview brief?
 
 project_name: EU-Law Platform (MVP)
 
