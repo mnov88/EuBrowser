@@ -1,16 +1,20 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useLocation, useOutletContext } from 'react-router-dom'; // Import useOutletContext
 import {
   getArticleById,
   getCaseLawsInterpretingArticle,
   getOperativePartsInterpretingArticle
 } from '../services/api';
 import { marked } from 'marked';
+import { setBreadcrumbTitle, clearBreadcrumbTitle } from '../components/Breadcrumbs';
 
-const RELATED_ITEMS_PER_PAGE = 10;
+const RELATED_ITEMS_PER_PAGE = 50; // For main page content pagination
+const SIDEBAR_ITEMS_LIMIT = 5; // For sidebar display - this remains small
 
 const ArticleViewPage = () => {
   const { id: articleId } = useParams();
+  const location = useLocation();
+  const { setSidebarData } = useOutletContext(); // Get setSidebarData from layout
 
   const [article, setArticle] = useState(null);
   const [isLoadingArticle, setIsLoadingArticle] = useState(true);
@@ -44,15 +48,24 @@ const ArticleViewPage = () => {
       try {
         const data = await getArticleById(articleId);
         setArticle(data);
+        if (data) {
+          const breadcrumbName = data.title ? `${data.article_number_text}: ${data.title}` : `${data.article_number_text || 'Article ' + data.id}`;
+          setBreadcrumbTitle(location.pathname, breadcrumbName);
+        }
       } catch (err) {
         setErrorArticle(err.response?.data?.error || err.message || `Failed to load article ${articleId}.`);
         setArticle(null);
+        clearBreadcrumbTitle(location.pathname);
       } finally {
         setIsLoadingArticle(false);
       }
     };
     fetchArticle();
-  }, [articleId]);
+    return () => {
+      clearBreadcrumbTitle(location.pathname);
+      if (setSidebarData) setSidebarData(null); // Clear sidebar on unmount
+    };
+  }, [articleId, location.pathname, setSidebarData]);
 
   // Fetch Related Case Laws
   const fetchCaseLaws = useCallback(async (page) => {
@@ -60,24 +73,45 @@ const ArticleViewPage = () => {
     setErrorCaseLaws(null);
     try {
       const response = await getCaseLawsInterpretingArticle(articleId, page, RELATED_ITEMS_PER_PAGE);
-      // Assuming response.data contains the array of { id (junction_id), case_law_id, article_id, case_law: { id, title, celex_number } }
-      setRelatedCaseLaws(response.data || []);
+      const caseLawsData = response.data || [];
+      setRelatedCaseLaws(caseLawsData);
       setCaseLawsTotalPages(response.pagination?.totalPages || 0);
       setCaseLawsCurrentPage(response.pagination?.page || page);
+
+      // Update sidebar data with the fetched case laws (limited items)
+      // Ensure case_law object exists and has necessary fields
+      if (setSidebarData) {
+        const sidebarCaseLaws = caseLawsData
+          .map(item => item.case_law) // Extract the case_law object
+          .filter(Boolean) // Filter out any undefined/null case_law objects
+          .slice(0, SIDEBAR_ITEMS_LIMIT);
+        const currentArticleTitle = article ? (article.title || article.article_number_text) : `Article ${articleId}`;
+        setSidebarData({
+          contextType: 'article',
+          contextTitle: currentArticleTitle,
+          relatedCaseLawsForArticle: sidebarCaseLaws
+        });
+      }
+
     } catch (err) {
       setErrorCaseLaws(err.response?.data?.error || err.message || 'Failed to load related case laws.');
       setRelatedCaseLaws([]);
       setCaseLawsTotalPages(0);
+      if (setSidebarData) setSidebarData({ contextType: 'article', relatedCaseLawsForArticle: [] }); // Clear on error
     } finally {
       setIsLoadingCaseLaws(false);
     }
-  }, [articleId]);
+  }, [articleId, setSidebarData]);
 
   useEffect(() => {
     if (article) { // Only fetch if article has been loaded
-      fetchCaseLaws(caseLawsCurrentPage);
+      fetchCaseLaws(caseLawsCurrentPage); // Fetch for main page content
     }
-  }, [article, caseLawsCurrentPage, fetchCaseLaws]);
+     // Clear sidebar data if article is not loaded or changes
+    if (!article && setSidebarData) {
+        setSidebarData(null);
+    }
+  }, [article, caseLawsCurrentPage, fetchCaseLaws, setSidebarData]);
 
   // Fetch Related Operative Parts
   const fetchOperativeParts = useCallback(async (page) => {

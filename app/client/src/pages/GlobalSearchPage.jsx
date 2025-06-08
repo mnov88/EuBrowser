@@ -3,7 +3,7 @@ import { useSearchParams, useNavigate } from 'react-router-dom';
 import { searchGlobal } from '../services/api';
 import ResultCard from '../components/ResultCard';
 
-const ITEMS_PER_PAGE = 10; // Or get from backend if it's configurable there
+const ITEMS_PER_PAGE = 50;
 
 const GlobalSearchPage = () => {
   const [searchParams, setSearchParams] = useSearchParams();

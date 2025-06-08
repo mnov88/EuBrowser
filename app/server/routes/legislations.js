@@ -53,8 +53,20 @@ router.get('/', async (req, res, next) => {
 // GET /legislations/:id - Get a single legislation by ID
 router.get('/:id', async (req, res, next) => {
   const { id } = req.params;
+  const { include_full_text } = req.query;
+
+  let queryText = 'SELECT id, celex_number, title, created_at, updated_at, search_tsvector'; // search_tsvector is not typically sent to client
+  // Let's select specific metadata fields and conditionally full_markdown_content
+  queryText = 'SELECT id, celex_number, title, created_at, updated_at';
+
+
+  if (include_full_text === 'true') {
+    queryText += ', full_markdown_content';
+  }
+  queryText += ' FROM legislations WHERE id = $1';
+
   try {
-    const result = await db.query('SELECT * FROM legislations WHERE id = $1', [id]);
+    const result = await db.query(queryText, [id]);
     if (result.rows.length === 0) {
       return res.status(404).json({ error: 'Legislation not found' });
     }
